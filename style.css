@@ -1,0 +1,262 @@
+
+.fat {
+    width:125%;
+    margin-top:100px;
+    margin-left:-50px;
+}
+
+input[type=range]{
+    -webkit-appearance: none;
+    
+    -webkit-transform:rotate(270deg);       
+    -moz-transform:rotate(270deg);
+    -o-transform:rotate(270deg);
+    -ms-transform:rotate(270deg);
+    transform:rotate(270deg);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 10px;
+    background: #ccc;
+    border: none;
+    border-radius: 3px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border: solid;
+    border-color:black;
+    height: 32px;
+    width: 32px;
+    border-radius: 50%;
+    background: antiquewhite;
+    margin-top: -12px;
+}
+
+input[type=range]:focus {
+    outline: none;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+    background: #ccc;
+}
+
+
+
+
+.modalContainer{
+    display: flex;
+}
+.modalTest{
+    width: 700px;
+}
+.modalSlider{
+    flex-grow: 1;
+}
+
+.incorrect {
+    color:red;
+    font-weight:bold;
+}
+.correct {
+    color:black;
+}
+
+
+.typeText {
+    width:95%; 
+    
+    font-family: typewriter;
+    font-size: 16px;
+    
+    vertical-align: top;
+}
+
+#modal {
+    position: fixed;
+    font-family: typewriter;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 99999;
+    height: 801px;
+    width: 1106px;
+}
+.modalContent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    width: 80%;
+    padding: 20px;
+}
+#winModal {
+    position: fixed;
+    font-family: typewriter;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 99999;
+    height: 801px;
+    width: 1106px;
+}
+#msgModal {
+    position: fixed;
+    font-family: typewriter;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 99999;
+    height: 801px;
+    width: 1106px;
+}
+.msgModalContent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    width: 50%;
+    padding: 20px;
+    text-align:center;
+    font-size:20px;
+}
+
+.divScreen {
+    position: fixed;
+    left:0%;
+    width:800px;
+    height:800px;
+
+    margin-top:-9px;
+    margin-left:-1px;
+
+}
+
+.divText {
+    width:300px;
+    height:160px;
+    border:1px solid black;
+
+    position:fixed;
+    top:0px;
+    left:801px;
+
+
+}
+
+
+.divInfo {
+    width:300px;
+    height:637px;
+    border:1px solid black;
+    background-color: antiquewhite;
+
+    position:fixed;
+    top:167px;
+    left:801px;
+
+    margin-top:-6px;
+    
+    text-align:right;
+    font-family: typewriter;
+    
+    font-size:30px;
+
+}
+
+.hiddenCommand {
+    font-size:20px;
+    font-family: redacted;
+    letter-spacing : 2px;
+    background-color:black;
+    
+}
+
+.visibleCommand {
+    font-size:20px;
+    font-family: typewriter;
+
+}
+
+.txtInput {
+    width:100%;
+    height:50px;
+
+    text-align: right;
+
+    font-size:45px;
+    font-family: typewriter;
+}
+
+.screen {
+    width:800px;
+    height:800px;
+
+    border:1px solid #000;
+}
+
+@font-face {
+    font-family: typewriter;
+    src: url(BohemianTypewriter.ttf);
+}
+@font-face {
+    font-family: crossedType;
+    src: url(CrossedType.ttf);
+}
+@font-face {
+    font-family: redacted;
+    src: url(Redacted-Regular.ttf);
+}
+
+
+.lastText1 {
+    position: absolute;
+    right:0px;
+    top:50px;
+
+    font-size:38px;
+    font-family: typewriter;
+}
+.lastText2 {
+    position: absolute;
+    right:0px;
+    top:80px;
+
+    font-size:31px;
+    font-family: typewriter;
+}
+.lastText3 {
+    position: absolute;
+    right:0px;
+    top:105px;
+
+    font-size:24px;
+    font-family: typewriter;
+}
+.lastText4 {
+    position: absolute;
+    right:0px;
+    top:125px;
+
+    font-size:17px;
+    font-family: typewriter;
+}
+.lastText5 {
+    position: absolute;
+    right:0px;
+    top:142px;
+
+    font-size:10px;
+    font-family: typewriter;
+}
+.lastText6 {
+    position: absolute;
+    right:0px;
+    top:155px;
+
+    font-size:3px;
+    font-family: typewriter;
+}

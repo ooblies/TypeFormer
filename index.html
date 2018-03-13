@@ -1,0 +1,1066 @@
+<!doctype html>
+<html>
+<head>
+    <title>TypeFormer</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="Levels.js"></script>
+</head>
+<body>
+    <div id="divScreen" class="divScreen">
+
+        <canvas id="canvas" class="screen"></canvas>
+
+    </div>
+    <div id="divText" class="divText">
+        <input tpye="text" class="txtInput" id="txtInput">
+        <br/>
+        <label id="lastTxt1" class="lastText1"></label><br/>
+        <label id="lastTxt2" class="lastText2"></label><br/>
+        <label id="lastTxt3" class="lastText3"></label><br/>
+        <label id="lastTxt4" class="lastText4"></label><br/>
+        <label id="lastTxt5" class="lastText5"></label><br/>
+        <label id="lastTxt6" class="lastText6"></label><br/>
+    </div>
+    <div id="divInfo" class="divInfo">
+        Commands<br/><br/>
+        <label id="command1" class="hiddenCommand">right</label><br/>
+        <label id="command2" class="hiddenCommand">left</label><br/>
+        <label id="command3" class="hiddenCommand">jump</label><br/>
+        <label id="command4" class="hiddenCommand">stop</label><br/>
+        <label id="command5" class="hiddenCommand">invert</label><br/>
+        <br/>
+        <br/>
+        WPM: <label id="lblWPM"></label><br/>
+        <br/>
+        High Score: <label id="lblScore">0</label><br/>
+        <br/>
+        <button onClick="restart();" >Restart</button>
+        <br/><br/><br/>
+    </div>
+    <div id="divTest" style="position:absolute; top:800px; width:1100px; display:none;">
+        <div style="font-size:20px;">
+            Test:<br/>
+            <input type="button" value="clearSave" onClick="clearSave();" ></input>
+            <input type="button" value="save" onClick="saveGame();" ></input>
+            <input type="button" value="load" onClick="loadGame();" ></input>
+            <br/>
+            <input type="button" value="left" onClick="processInput('left');" ></input>
+            <input type="button" value="jump" onClick="processInput('jump');" ></input>
+            <input type="button" value="right" onClick="processInput('right');" ></input>
+            <input type="button" value="stop" onClick="processInput('stop');" ></input>
+            <br/>
+            <input type="button" value="50wpm" onClick="updateWPM(50);"></input>
+            <input type="button" value="100wpm" onClick="updateWPM(100);"></input>
+            <input type="button" value="150wpm" onClick="updateWPM(150);"></input>
+            <br/>
+            <input type="text" value="0" id="txtLevel" style="width:25px;">
+            <input type="button" value="SetLevel" onClick="changeLevel();"></input>
+            <br/>
+            X:<label id="lblPlayerX"></label><br/>
+            Y:<label id="lblPlayerY"></label><br/>
+            velX:<label id="lblVelX"></label><br/>
+            velY:<label id="lblVelY"></label><br/>
+            grounded:<label id="lblGrounded"></label><br/>
+            speedMultiplier:<label id="lblSpeedMultiplier"></label><br/>
+            effectiveSpeed:<label id="lblEffectiveSpeed"></label><br/>
+            effectiveGravity:<label id="lblEffectiveGravity"></label><br/>
+            effectiveVi:<label id="lblEffectiveVi"></label><br/>
+            dir:<label id="lblDir"></label><br/>
+            nextDir:<label id="lblNextDir"></label><br/>
+            <br/>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+            window.requestAnimationFrame = requestAnimationFrame;
+        })();
+        
+        var wpm = 0;
+        var highScore = 0;
+        var speedMultiplier = 0;
+        var shouldSpawn = true;
+        var currentLevel = 0;
+        var startTime;
+        //var time   = 0;
+        var score = 0;
+
+        var canvas = document.getElementById("canvas"),
+                ctx = canvas.getContext("2d"),
+                width = 800,
+                height = 800,
+                player = {
+                    x: width / 2,
+                    y: height / 2,
+                    width: 20,
+                    height: 20,
+                    speed: 4,
+                    velX: 0,
+                    velY: 0,
+                    jumping: false,
+                    grounded: false,
+                    deaths: 0
+                },
+                nextPlayer = {
+                    x: width / 2,
+                    y: height / 2,
+                    width: 20,
+                    height: 20,
+                    speed: 4,
+                    velX: 0,
+                    velY: 0,
+                    jumping: false,
+                    grounded: false,
+                    deaths: 0
+                },
+                keys = [],
+                gravity = 0.3,
+                jumpMultiplier = 2.5,
+                inverted = 0;
+
+        var timeOffset = 0;
+        var pauseStart;
+        var effectiveSpeed = player.speed;
+        var effectiveGravity = gravity;
+        var effectiveVi = player.speed * jumpMultiplier;
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        var countdown;
+        
+        var wordsFile;
+        
+        var modalPage = 0;
+        var modalOpen = 0;
+        var winModalOpen = 0;
+        var testStarted = 0;
+        var increasing = 0;
+        var paused = false;
+        
+        /*global levels*/
+        /*global boxes*/
+        
+        //Window
+
+        window.addEventListener("load", function () {
+            
+            loadGame();
+            
+            update();
+            changeSpeed(100);
+            
+             $.ajax({url: 'Words.txt'
+                }).done(function(content) {
+                    
+                    // normalize the line breaks, then split into lines
+                    wordsFile = content.replace(/\r\n|\r/g, '\n').trim().split('\n');
+                    
+            });   
+            
+        });
+        
+        
+         $(document).on("keypress", function (e) {
+            if (modalOpen == 0) {
+                // use e.which
+                $( "#txtInput" ).focus();
+                var key = e.which;
+    
+                if (key == 13) {
+                    updateHistory($("#txtInput")[0].value);
+                    processInput($("#txtInput")[0].value);
+                    
+                    checkRedacted($("#txtInput")[0].value);
+    
+                    $("#txtInput")[0].value = "";
+                }
+            } else if (testStarted == 0) {
+                startTest();
+            }
+        });
+
+        
+        //SAVE
+        
+        function saveGame(){
+            var l = false;
+            var r = false;
+            var j = false;
+            var s = false;
+            var i = false;
+        
+            $('.visibleCommand').each(function(index, item) {
+                switch (item.innerText) {
+                    case "left":
+                        l = true;
+                        break;
+                    case "right":
+                        r = true;
+                        break;
+                    case "jump":
+                        j = true;
+                        break;
+                    case "stop":
+                        s = true;
+                        break;
+                    case "invert":
+                        i = true;
+                    default:
+                        break;
+                }
+            });
+            
+            
+            
+            var save = {
+                wpm: wpm,
+                level: currentLevel,
+                highScore: highScore,
+                startTime: startTime,
+                timeOffset: timeOffset,
+                deaths: player.deaths,
+                right: r,
+                left: l,
+                jump: j,
+                stop: s,
+                invert: i
+                
+             }
+        
+            localStorage.setItem("TypeFormerSave",JSON.stringify(save));
+        }
+        
+        function loadGame(){
+        
+    
+         var savedGame = JSON.parse(localStorage.getItem("TypeFormerSave"));
+            if (savedGame == null) {
+                return false;
+            } else {
+                
+                if (typeof savedGame.wpm !== "undefined") updateWPM(savedGame.wpm);
+                if (typeof savedGame.level !== "undefined") currentLevel = savedGame.level;
+                if (typeof savedGame.highScore !== "undefined") {
+                    highScore = savedGame.highScore;
+                    $("#lblScore")[0].innerText = highScore;
+                }
+                
+                if (typeof savedGame.startTime !== "undefined") {
+                    var dateNow = new Date();
+                    startTime = savedGame.startTime;//dateNow.getTime()/1000;
+                }
+                
+                if (typeof savedGame.timeOffset !== "undefined") {
+                    timeOffset = savedGame.timeOffset;
+                }
+                
+                if (typeof savedGame.deaths !== "undefined") player.deaths = savedGame.deaths;
+                
+                if (typeof savedGame.right !== "undefined") {
+                    if (savedGame.right) {
+                        checkRedacted("right");
+                    }
+                }
+                if (typeof savedGame.left !== "undefined") {
+                    if (savedGame.left) {
+                        checkRedacted("left");
+                    }
+                }
+                if (typeof savedGame.jump !== "undefined") {
+                    if (savedGame.jump) {
+                        checkRedacted("jump");
+                    }
+                }
+                if (typeof savedGame.stop !== "undefined") {
+                    if (savedGame.stop) {
+                        checkRedacted("stop");
+                    }
+                }
+                if (typeof savedGame.invert !== "undefined") {
+                    if (savedGame.invert) {
+                        checkRedacted("invert");
+                    }
+                }
+                
+                respawnPlayer();
+                
+                return true;
+            }
+        }
+
+
+
+        function clearSave(){
+            localStorage.removeItem("TypeFormerSave");
+        }
+        
+        
+        
+        //INPUT
+        function processInput(input) {
+            switch (input) {
+                case "left":
+                    keys[37] = true;
+                    keys[39] = false;
+                    break;
+                case "right":
+                    keys[39] = true;
+                    keys[37] = false;
+                    break;
+                case "jump":
+                    keys[32] = true;
+                    break;
+                case "stop":
+                    keys[39] = false;
+                    keys[37] = false;
+                    keys[32] = false;
+                    player.velX = 0;
+                    break;
+                case "invert":
+                    invert();
+                    break;
+                case "win":
+                    typeWin();
+                    break;
+                case "pause":
+                    openModal("Paused","");
+                    break;
+                case "start":
+                    startGame();
+                    break;
+                case "test":
+                    toggleTest();
+                    break;
+            }
+        }
+        
+        function changeLevel() {
+            currentLevel = $("#txtLevel")[0].value;
+        }
+        
+        
+        function pause() {
+            paused = true;
+            
+            pauseStart = parseInt((new Date().getTime())/1000, 10);
+        }
+        
+        function unpause() {
+            paused = false;
+            
+            var now = parseInt((new Date().getTime())/1000, 10);
+            
+            timeOffset += (now - pauseStart);
+            
+            startTime = now; 
+        }
+        
+        function getGameTime() {
+            var now = parseInt((new Date().getTime()/1000), 10);
+            var time = (now - startTime) + timeOffset;
+            
+            var timeSincePause = now - pauseStart;
+            
+            if (paused) {
+                return parseInt(time, 10) - timeSincePause;
+            }
+            
+            return parseInt(time, 10);    
+        }
+        
+        function toggleTest() {
+            var test = $("#divTest")[0];
+            
+            if (test.style.display =="none") {
+                test.style.display = "block";
+            } else {
+                test.style.display = "none";
+            }
+        }
+        
+        function startGame() {
+            pause();
+            $("#modal")[0].style.display = "block";
+            modalOpen = 1;
+            shouldSpawn = false;
+            
+            resizeTextArea();
+        }
+        
+        function openModal(header, text) {
+            pause();
+            $("#modalHeader")[0].innerText = header;
+            $("#modalText")[0].innerText = text;
+            $("#msgModal")[0].style.display = "block";   
+        }
+        
+        function invert() {
+            if (inverted == 0) {
+                inverted = 1;
+            } else {
+                inverted = 0;
+            }
+            player.grounded = false;
+            player.jumping = true;
+            gravity = gravity * -1;
+            jumpMultiplier = jumpMultiplier * -1;
+            
+            changeSpeed(wpm);
+        }
+        
+        function typeWin() {
+            if (currentLevel == levels.length - 1) {
+                win();    
+            } else { 
+                openModal("", "Ha! Nice try!");    
+            }
+        }
+        
+        function win() {
+                pause();
+                var time = getGameTime();
+                
+                score +=  parseInt(300 - time, 10);
+                
+                if (score > highScore) {
+                    highScore = score;
+                }
+                
+                saveGame();
+                
+                var msg = "";
+                
+                switch (true) {
+                    case (wpm <= 50):
+                        msg = "Wait. Only " + wpm.toString() + "wpm?? I think you can do better.";
+                        break;
+                    case (wpm > 50 && wpm <= 90):
+                        msg = wpm.toString() + "wpm... Not bad... Room for improvement, though.";
+                        break;
+                    case (wpm > 90 && wpm <= 120):
+                        msg = "Well done, sir! (or madam). " + wpm.toString() + "wpm is a decent speed. Now try it with a higher WPM~!";
+                        break;
+                    case (wpm > 120 && wpm <= 160):
+                        msg = "Great job! " + wpm.toString() + "wpm is something to be proud of!";
+                        break;
+                    case (wpm > 160 && wpm <= 199):
+                        msg = "Wow. " + wpm.toString() + "wpm. You beat this at a higher WPM than even I could! Think you can do 200?";
+                        break;
+                    case (wpm = 200):
+                        msg = "The big 200! Truly an impressive feat. You shall be forever remembered for your work here, today.";
+                        break;
+                    case (wpm > 200):
+                        msg = wpm.toString() + "wpm... I don't know how you did this. No, like, I really don't know how you did. The game shouldn't let you have higher than 200wpm...";
+                        break;
+                    default: 
+                        msg = "How can you see me?!";
+                        break;
+                }
+                
+                $("#lblWinDeaths")[0].innerText = player.deaths;
+                $("#lblWinTime")[0].innerText = time.toString();
+                $("#lblWinScore")[0].innerText = score;
+                $("#lblWinMessage")[0].innerText = msg;
+                $("#winModal")[0].style.display = "block";
+            
+        }
+        
+   
+        
+        
+        //UDDATE
+        
+        function updateTestSection() {
+            $("#lblPlayerX")[0].innerText = player.x;
+            $("#lblPlayerY")[0].innerText = player.y;
+            
+            $("#lblVelX")[0].innerText = player.velX;
+            $("#lblVelY")[0].innerText = player.velY;
+            
+            $("#lblGrounded")[0].innerText = player.grounded;
+            
+            
+            $("#lblSpeedMultiplier")[0].innerText = speedMultiplier;
+            $("#lblEffectiveSpeed")[0].innerText = effectiveSpeed;
+            $("#lblEffectiveGravity")[0].innerText = effectiveGravity;
+            $("#lblEffectiveVi")[0].innerText = effectiveVi;
+            
+        }
+        
+        
+         function updateScore() {
+            score = Math.floor(((currentLevel - 1) * wpm) - (player.deaths * 2)); 
+            if (score > highScore) {
+                highScore = score;
+            }
+            
+            $("#lblScore")[0].innerText = highScore;
+        }
+
+        function drawInfo() {
+            //draw level text(s)
+            for (var i = 0; i < levels.length; i++) {
+                if (levels[i].level == currentLevel) {
+                    //deaths, BL
+                    ctx.beginPath();
+                    ctx.font = "40px typewriter";
+                    ctx.fillStyle = levels[i].deathColor;
+                    ctx.fillText(player.deaths.toString(), 25, 775);
+                    ctx.closePath();
+                    
+                    
+                    //time, TR
+                    var strTime = getGameTime().toString() + "s";
+                    
+                    ctx.beginPath();
+                    ctx.textAlign="end";
+                    ctx.font = "40px typewriter";
+                    ctx.fillStyle = levels[i].timerColor;
+                    ctx.fillText(strTime, 785, 50);
+                    ctx.closePath();
+                    
+                
+
+                    //Level, TL
+                    ctx.beginPath();
+                    ctx.font = "40px typewriter";
+                    ctx.fillStyle = levels[i].levelColor;
+                    ctx.fillText(currentLevel.toString(), 50, 50);
+                    ctx.closePath();
+
+
+                    //Score, BR
+                    ctx.beginPath();
+                    ctx.font = "40px typewriter";
+                    ctx.fillStyle = levels[i].scoreColor;
+                    ctx.fillText(score.toString(), 785, 775);
+                    ctx.closePath();
+
+                    
+                  
+
+                    ctx.textAlign="left";
+
+                    if (levels[i].text1 != null) {
+                        ctx.beginPath();
+                        ctx.fillStyle = levels[i].text1Color;
+                        ctx.fillText(levels[i].text1, levels[i].text1X, levels[i].text1Y);
+                        ctx.closePath();
+                    }
+                    if (levels[i].text2 != null) {
+                        ctx.beginPath();
+                        ctx.fillStyle = levels[i].text2Color;
+                        ctx.fillText(levels[i].text2, levels[i].text2X, levels[i].text2Y);
+                        ctx.closePath();
+                    }
+                    if (levels[i].text3 != null) {
+                        ctx.beginPath();
+                        ctx.fillStyle = levels[i].text3Color;
+                        ctx.fillText(levels[i].text3, levels[i].text3X, levels[i].text3Y);
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
+
+        function update() {
+            
+            
+                
+                ctx.clearRect(0, 0, width, height);
+    
+                if (keys[32]) {
+                    // jump
+                    if (!player.jumping && player.grounded) {
+                        player.jumping = true;
+                        player.grounded = false;
+                        player.velY = -effectiveVi;
+                        keys[32] = false;
+                    }
+                }
+                if (keys[39]) {
+                    // right
+                    if (player.velX < effectiveSpeed) {
+                        player.velX++;
+                    }
+                }
+                if (keys[37]) {         
+                    // left
+                    if (player.velX > -effectiveSpeed) {
+                        player.velX--;
+                    }
+                }
+        
+                //player.velX *= effectiveFriction;
+                player.velY += effectiveGravity;
+        
+                player.grounded = false;
+                var dir = "";
+                
+                for (var i = 0; i < boxes.length; i++) {
+                    if (boxes[i].level == currentLevel) {
+                        if (boxes[i].kill == 1) {
+                            ctx.fillStyle = "red";
+                        } else if (boxes[i].goal == 1) {
+                            ctx.fillStyle = "blue";
+                        } else {
+                            ctx.fillStyle = "black";
+                        }
+        
+        
+                        ctx.beginPath();
+                        ctx.rect(boxes[i].x, boxes[i].y, boxes[i].width, boxes[i].height);
+                        ctx.fill();
+                        ctx.closePath();
+        
+                        dir = colCheck(player, boxes[i]);
+                        if (dir != null) {
+                            $("#lblDir")[0].innerText = dir;
+                        }
+        
+                        if (dir == "x") { //kill
+                            player.deaths++;
+                            respawnPlayer();
+                        } else if (dir =="g") {
+                            levelComplete();
+                        } else if (dir == "l" || dir == "r") {
+                            player.velX = 0;
+                            player.jumping = false;
+                        } else if (dir == "b") {
+                            if (inverted == 0) {
+                                player.grounded = true;
+                                player.jumping = false;
+                            }
+                            player.velY = 0;
+                        } else if (dir == "t") {
+                            if (inverted == 1) {
+                                player.grounded = true;
+                                player.jumping = false;
+                            }
+                            player.velY = 0;
+                        }
+                        
+                       
+                    }
+        
+                }
+        
+                if (player.grounded) {
+                    player.velY = 0;
+                }
+                
+                if (!player.grounded) {
+                    player.y += player.velY;    
+                }
+                
+                player.x += player.velX;    
+                
+                
+        
+                if (shouldSpawn == true) {
+                    shouldSpawn = false;
+                    respawnPlayer();
+                }
+                
+                if (player.x > 800) {
+                    player.x = 750;
+                }
+                
+                if (player.y > 800) {
+                    player.y = 750;
+                }
+                
+                if (player.y < 0) {
+                    player.y = 50;
+                }
+                
+                if (player.x < 0) {
+                    player.x = 50;
+                }
+                
+        
+                //draw text and level #
+                drawInfo();
+        
+                ctx.fill();
+                ctx.fillStyle = "green";
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+                /* global requestAnimationFrame*/
+                requestAnimationFrame(update);
+                
+                updateTestSection();
+        
+            
+
+        }
+        
+        
+        //Physics
+        
+        function colCheck(shapeA, shapeB) {
+            // get the vectors to check against
+            var vX = (shapeA.x + (shapeA.width / 2)) - (shapeB.x + (shapeB.width / 2)),
+                    vY = (shapeA.y + (shapeA.height / 2)) - (shapeB.y + (shapeB.height / 2)),
+            // add the half widths and half heights of the objects
+                    hWidths = (shapeA.width / 2) + (shapeB.width / 2),
+                    hHeights = (shapeA.height / 2) + (shapeB.height / 2),
+                    colDir = null;
+
+            // if the x and y vector are less than the half width or half height, they we must be inside the object, causing a collision
+            if (Math.abs(vX) < hWidths && Math.abs(vY) < hHeights) {         // figures out on which side we are colliding (top, bottom, left, or right)
+                var oX = hWidths - Math.abs(vX),
+                    oY = hHeights - Math.abs(vY);
+                if (oX >= oY) {
+                    if (vY > 0) {
+                        colDir = "t";
+                        shapeA.y += oY;
+                    } else {
+                        colDir = "b";
+                        shapeA.y -= oY ;
+                    }
+                } else {
+                    if (vX > 0) {
+                        colDir = "l";
+                        shapeA.x += oX;
+                    } else {
+                        colDir = "r";
+                        shapeA.x -= oX;
+                    }
+                }
+            }
+
+            if ((colDir != null) && (shapeB.kill == 1)) {
+                //determine if touching a kill block
+                colDir = "x";
+            } else if ((colDir != null) && (shapeB.goal == 1)) {
+                //determine if touching a goal block
+                colDir = "g";
+            }
+
+            return colDir;
+        }
+        
+        function changeSpeed(wpm){
+            speedMultiplier = 100/wpm;
+            
+            effectiveSpeed = player.speed / speedMultiplier;
+            effectiveGravity = gravity/(speedMultiplier * speedMultiplier);
+            effectiveVi = effectiveSpeed * jumpMultiplier;
+        }
+
+       
+        //WORDS
+        
+        function updateHistory(txt){
+            if (txt.length > 0) {
+                $("#lastTxt6")[0].innerText = $("#lastTxt5")[0].innerText;
+                $("#lastTxt5")[0].innerText = $("#lastTxt4")[0].innerText;
+                $("#lastTxt4")[0].innerText = $("#lastTxt3")[0].innerText;
+                $("#lastTxt3")[0].innerText = $("#lastTxt2")[0].innerText;
+                $("#lastTxt2")[0].innerText = $("#lastTxt1")[0].innerText;
+                $("#lastTxt1")[0].innerText = txt;
+            }
+        }
+        
+        function checkRedacted(word){
+            $('.hiddenCommand').each(function(index, item) {
+                if(item.innerText == word) {
+                    item.className = "visibleCommand";
+                }
+            });
+        }
+
+       //MODALS
+         
+        function nextModal(){
+            if (modalPage == 0) {
+                $("#modal1")[0].style.display = "none";
+                $("#modal2")[0].style.display = "block";
+            }
+            
+            modalPage = modalPage++;
+            restartTest();
+        }
+        
+        function closeModal(){
+            unpause();
+            currentLevel = 1;
+            $("#modal")[0].style.display = "none";
+            modalOpen = 0;
+            startTime = new Date().getTime()/1000;
+            saveGame();
+            shouldSpawn = true;
+        }
+        
+        
+        function increaseWords() {
+         // load the trivia from the server
+            
+                    var randLineNum = Math.floor(Math.random() * wordsFile.length);
+                    
+                    var wordCount = 0;
+                    
+                    while (wordCount < 10) {
+                        // show the corresponding line
+                        $('#lblText')[0].innerHTML += "<span>" + wordsFile[randLineNum] + "</span> ";
+                        
+                        
+                        randLineNum = Math.floor(Math.random() * wordsFile.length);
+                        wordCount++;
+                    }
+                    
+                    $('#lblText')[0].innerHTML += '\n';
+                    
+                    increasing = 0;
+              
+        }
+        
+        function startTest() {
+            testStarted = 1;
+            
+            var testStart = new Date().getTime();
+            
+            function timeTest() {
+                countdown = setInterval(function () {
+                    var now = new Date().getTime();
+                    var seconds = 60000 - (now - testStart);
+            
+                    var strSeconds = (seconds/1000).toFixed(1) + "s";
+                    
+                    $('#time').text(strSeconds);
+            
+                    checkText((now - testStart)/1000);
+                    
+                    if (seconds <= 0) {
+                        $('#time').text("0s");
+                        $('#taTyping')[0].disabled = true;
+                        $('#btnPlay')[0].disabled = false;
+                        clearInterval(countdown);
+                    }
+                }, 100);
+            }
+            
+            jQuery(function ($) {
+                timeTest();
+            });
+        }
+        
+       
+        
+        function checkText(time) {
+            //var words = $('#lblText')[0].innerText.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm,"").split(' ');
+            var myWords  = $('#taTyping')[0].value.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm,",").split(' ');
+            var children = $('#lblText')[0].children;
+            
+            var childWords = "";
+            for (var j = 0; j < children.length; j++) {
+                childWords += children[j].innerText + " ";
+            }
+            
+            var words = childWords.split(' ');
+            
+            var correctWords = 0;
+            
+            for (var i = 0; i < myWords.length; i++) { 
+                if (myWords[i] == words[i]) {
+                    correctWords++;
+                    $('#lblText')[0].children[i].className = "correct";
+                }
+                else
+                {
+                    $('#lblText')[0].children[i].className = "incorrect";
+                }
+            }
+            
+            if ((myWords.length >= words.length - 5) && (increasing == 0)) {
+                increasing = 1;
+                increaseWords();
+            }
+            
+            updateWPM(Math.round(correctWords * (60 / time)));
+            
+            resizeTextArea();
+        }
+        
+        function resizeTextArea(){
+            var ta = $('#taTyping')[0];
+            
+            ta.style.height = "1px";
+            ta.style.height = (25+ta.scrollHeight)+"px";
+        }
+        
+        function restartTest() {
+            resizeTextArea();
+            testStarted = 0;
+            updateWPM(0);
+            clearInterval(countdown);
+            $('#time').text("60s");
+            $('#btnPlay')[0].disabled = true;
+            $('#taTyping')[0].disabled = false;
+            $('#lblText')[0].innerText = "";
+            $('#taTyping')[0].value = "";
+            
+            increaseWords();
+            
+        }
+        
+        
+        function updateSlider(value) {
+            updateWPM(value);
+            
+            $('#btnPlay')[0].disabled = false;
+            
+        }
+        
+        
+        
+        function closeMsg() {
+            $("#msgModal")[0].style.display = "none";
+            unpause();
+        }
+       
+        
+        //Functions
+        
+        
+        function restart() {
+            paused = false;
+            
+            pause();
+            currentLevel = 1;
+            player.deaths    = 0;
+            score = 0;
+            startTime = new Date().getTime()/1000;
+            timeOffset = 0;
+            
+            respawnPlayer();
+            
+            restartTest();
+            
+            modalOpen = 1;
+            modalPage = 0;
+            
+            $("#winModal")[0].style.display = "none";
+            $("#modal1")[0].style.display = "block";
+            $("#modal2")[0].style.display = "none";
+            $("#modal")[0].style.display = "block";
+            
+            saveGame();
+            
+            
+            
+        }
+        
+
+        function respawnPlayer() {
+            for (var i = 0; i < levels.length; i++) {
+                if (levels[i].level == currentLevel) {
+                    player.velX = 0;
+                    player.velY = 0;
+                    
+                    player.x = levels[i].x;
+                    player.y = levels[i].y;
+
+                    keys[32] = false; //jump
+                    keys[39] = false; //left
+                    keys[37] = false; //right
+
+                }
+            }
+            
+            if (inverted == 1) {
+                invert();
+            }
+            updateScore();
+            saveGame();
+        }
+
+        function levelComplete() {
+            keys[32] = false; //jump
+            keys[39] = false; //left
+            keys[37] = false; //right
+            
+            updateScore();
+
+            currentLevel++;
+            respawnPlayer();
+        }
+        
+         function updateWPM(num) {
+            wpm = num;
+            $('#wpm')[0].innerText = num;
+            $('#slider')[0].value = num;
+            $('#lblWPM')[0].innerText = num;
+            
+            changeSpeed(num);
+        }
+        
+    </script>
+    <div id="modal" style="display:none;">
+        <div id="modal1" class="modalContent">
+            <h1>TypeFormer</h1>
+            <br/>
+                <p>Welcome to TypeFormer! First things first, we'll need to measure your WPM.<br/>
+                   <br/>
+                   This will affect the difficulty of the game. If you don't want to take the test, you can adjust the slider to choose your WPM setting. <br/>
+                   <br/>
+                   Though, if you're not willing to spend 60 seconds to measure your WPM, this might not be the game for you...<br/>
+                   <br/>
+                   <br/>
+                   Good luck!</p>
+                   <br/>
+            <button onclick="nextModal();">Next</button>
+        </div>
+        <div id="modal2" class="modalContent" style="display:none;">
+            
+            <div class="modalContainer">
+                
+                 <div class="modalTest" >
+                     <h1>Typing Test</h1>
+                    <h3 id="time">60s</h3>
+                    <label class="typeText" id="lblText"></label><br/>
+                    <br/>
+                    <textarea class="typeText" id="taTyping" rows="5"></textarea>
+                </div>
+                <div class="modalSlider">
+                     <h1>Manual</h1><br/>
+                    <input id="slider" class="fat" type="range" min="5" max="200" onchange="updateSlider(this.value)"/>
+                </div>
+            </div>
+           
+            <br/>
+            <h3 >WPM: <label id="wpm"></label></h3>
+            <button id="btnPlay" onclick="closeModal();" disabled="true">Let's play!</button>
+            <button id="btnRestart" onclick="restartTest();">Restart</button>
+        </div>
+    </div>
+    
+    <div id="winModal" style="display:none;">
+        <div class="modalContent">
+            <h1>Congrats!</h1>
+            <h3>You beat the game~!</h3>
+            <label id="lblWinMessage">You shouldn't be able to see this... Oops.</label>
+            <br/><br/>
+            <label id="lblWinScore">0</label> points!
+            <br/>
+            <label id="lblWinTime">0</label> seconds!
+            <br/>
+            <label id="lblWinDeaths">0</label> deaths! 
+            <br/><br/>
+            <button onclick="restart();">Restart</button>
+            
+        </div>
+    </div>
+    
+    <div id="msgModal" style="display:none;">
+        <div class="msgModalContent">
+            <h1><label id="modalHeader"></label></h1>
+            <p><label id="modalText"></label></p>
+            <button onclick="closeMsg();">Close</button>
+        </div>
+    </div>
+</body>
+</html>
