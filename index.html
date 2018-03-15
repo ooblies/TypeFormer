@@ -1017,60 +1017,60 @@
             }
             
         </script>
-        <div id="modal" style="display:none;">
-            <div id="modal1" class="modalContent">
-                <h1>TypeFormer</h1>
+    </div>
+    <div id="modal" style="display:none;">
+        <div id="modal1" class="modalContent">
+            <h1>TypeFormer</h1>
+            <br/>
+                <p>Welcome to TypeFormer! First things first, we'll need to measure your WPM.<br/>
                 <br/>
-                    <p>Welcome to TypeFormer! First things first, we'll need to measure your WPM.<br/>
-                    <br/>
-                    This will affect the difficulty of the game. If you don't want to take the test, you can adjust the slider to choose your WPM setting. <br/>
-                    <br/>
-                    Though, if you're not willing to spend 60 seconds to measure your WPM, this might not be the game for you...<br/>
-                    <br/>
-                    <br/>
-                    Good luck!</p>
-                    <br/>
-                <button onclick="nextModal();">Next</button>
-            </div>
-            <div id="modal2" class="modalContent" style="display:none;">
-                
-                <div class="modalContainer">
-                    
-                    <div class="modalTest" >
-                        <h1>Typing Test</h1>
-                        <h3 id="time">60s</h3>
-                        <label class="typeText" id="lblText"></label><br/>
-                        <br/>
-                        <textarea class="typeText" id="taTyping" rows="5"></textarea>
-                    </div>
-                    <div class="modalSlider">
-                        <h1>Manual</h1><br/>
-                        <input id="slider" class="fat" type="range" min="5" max="200" onchange="updateSlider(this.value)"/>
-                    </div>
-                </div>
-            
+                This will affect the difficulty of the game. If you don't want to take the test, you can adjust the slider to choose your WPM setting. <br/>
                 <br/>
-                <h3 >WPM: <label id="wpm"></label></h3>
-                <button id="btnPlay" onclick="closeModal();" disabled="true">Let's play!</button>
-                <button id="btnRestart" onclick="restartTest();">Restart</button>
-            </div>
+                Though, if you're not willing to spend 60 seconds to measure your WPM, this might not be the game for you...<br/>
+                <br/>
+                <br/>
+                Good luck!</p>
+                <br/>
+            <button onclick="nextModal();">Next</button>
         </div>
-        
-        <div id="winModal" style="display:none;">
-            <div class="modalContent">
-                <h1>Congrats!</h1>
-                <h3>You beat the game~!</h3>
-                <label id="lblWinMessage">You shouldn't be able to see this... Oops.</label>
-                <br/><br/>
-                <label id="lblWinScore">0</label> points!
-                <br/>
-                <label id="lblWinTime">0</label> seconds!
-                <br/>
-                <label id="lblWinDeaths">0</label> deaths! 
-                <br/><br/>
-                <button onclick="restart();">Restart</button>
+        <div id="modal2" class="modalContent" style="display:none;">
+            
+            <div class="modalContainer">
                 
+                <div class="modalTest" >
+                    <h1>Typing Test</h1>
+                    <h3 id="time">60s</h3>
+                    <label class="typeText" id="lblText"></label><br/>
+                    <br/>
+                    <textarea class="typeText" id="taTyping" rows="5"></textarea>
+                </div>
+                <div class="modalSlider">
+                    <h1>Manual</h1><br/>
+                    <input id="slider" class="fat" type="range" min="5" max="200" onchange="updateSlider(this.value)"/>
+                </div>
             </div>
+        
+            <br/>
+            <h3 >WPM: <label id="wpm"></label></h3>
+            <button id="btnPlay" onclick="closeModal();" disabled="true">Let's play!</button>
+            <button id="btnRestart" onclick="restartTest();">Restart</button>
+        </div>
+    </div>
+    
+    <div id="winModal" style="display:none;">
+        <div class="modalContent">
+            <h1>Congrats!</h1>
+            <h3>You beat the game~!</h3>
+            <label id="lblWinMessage">You shouldn't be able to see this... Oops.</label>
+            <br/><br/>
+            <label id="lblWinScore">0</label> points!
+            <br/>
+            <label id="lblWinTime">0</label> seconds!
+            <br/>
+            <label id="lblWinDeaths">0</label> deaths! 
+            <br/><br/>
+            <button onclick="restart();">Restart</button>
+            
         </div>
     </div>
     
